@@ -32,11 +32,91 @@ def Deconfusogram(xin,yin,colin,areain,rotin,
               ylims=None,
               xlabel="Period (days)",
               ylabel="Mass ($M_{\odot}$)",
-              collabel="Rotation: axisymmetry       Color: poloidal",
+              collabel="Rotation: axisymmetry   /  Color: poloidal",
               arealabel="Size: $<B^{2}>$ (kG$^{2}$)",
               file=None,
               AbsCol=True,   # set color and symbol rotation on 0-1 range, assumes inputs are in (0,1)
               AbsRot=True):
+    """Plotting routine to display ZDI data or more generally 5 variables on single 2-D plot.
+        
+        Returns a figure and an axis object, with general keywords to adjusting plot contents, all variable arrays should have same length.
+        
+        Parameters
+        ----------
+        xin: array_like
+             Array pertaining to the X-axis positions of the output scatter points. Defaults set to interpret this as Rotation Period.
+        
+        yin: array_like
+             Array pertaining to the Y-axis positions of the output scatter points. Defaults set to interpret this as Mass.
+            
+        colin: array_like
+               Array pertaining to variable corresponding to scatter point colors. Ideally data in range [0,1]. Defaults set to interpret this as Poloidal degree of magnetic field map.
+        
+        areain: array_like
+                Array pertaining to variable mapped to area of circles for plotting data points. Plot sizes set by areaRange. Defaults to intepret this as Squared magnetic field.
+                
+        rotin: array_like
+               Array pertaining to variable displayed according to flag orientation on each circle scatter point. Range of flags set by rotRange, with 0 to 0.5 corresponding to top 180 degrees of circle. Ideally data in range [0,1]. Defaults set to interpret this as degree of field axisymmetry.
+        
+        ax: matplotlib axis object
+            Pass existing axis object to plot data in.
+        
+        cmap: string
+              Pass string to indicate name of matplotlib color map to use defaults to 'Spectral_r'; works best with continuos maps.
+        
+        xlims: None or 2 element list
+               Passed to axis.set_xlim
+        
+        ylims: None or 2 element list
+               Passed to axis.set_ylim
+        
+        xlabel: string
+                Passed to axis.set_xlabel
+                
+        ylabel: string
+                Passed to axis.set_ylabel
+ 
+        collabel: string
+                Passed to colAx.set_ylabel ; Used label the left side of the colorbar axis
+                
+        arealabel: string
+                Passed to legAx.set_ylabel ; Used label the right side of the colorbar axis
+        
+        file: string
+              String as name of output file for saving figure.
+              
+        AbsCol: boolean
+                Default is True, places colin array to plot on absolute range [0,1] even if max or min do not extend to 0 or 1.
+        
+        AbsRot: boolean
+        Default is True, places rotin array to plot on absolute range [0,1] even if max or min do not extend to 0 or 1.
+        
+        
+        Returns
+        -------
+        fig: matplotlib figure object
+             figure object containing axis of plot
+             
+        ax: matplotlib axis object
+            axis object pertaining to plot data
+            
+            
+        Notes
+        -----
+        Be careful with plotting data for colin and rotin that are not already normalized to range of [0,1], to make sure legend bar accurately reflects the data. Both variables need to be on same range for the color bar axis to make sense -- percentage variables work well here.
+        
+        Examples
+        --------
+        
+        
+        >>> from astropy.table import Table
+        >>> import Deconfuso
+        
+        >>> dat = Table.read("../zdi_data/MasterTable_ZDI.csv")
+        >>> fig, ax = Deconfuso.Deconfusogram(np.log10(dat['Prot(d)']), dat['Mass(Msun)'], dat['Pol.'], 0.1*dat['<B2>(1e5 G2)'],dat['Axisym'],xlabel="$\log_{10}$ Period (d)",file="../plots/Deconfuso_01_Alt.pdf")
+        
+        
+        """
 
     if ax is None:
         fig, axis = plt.subplots()
@@ -83,8 +163,8 @@ def Deconfusogram(xin,yin,colin,areain,rotin,
 
         scaleA = np.maximum(np.cos(2*np.pi*phase)**2,np.sin(2*np.pi*phase)**2) # scale needed to make sure area of circles correponds to data 
         
-        axis.scatter(xin[i],yin[i],c=colout(colin[i]),edgecolors="black",
-                     s=areaout[i]*scaleA,alpha=0.6,verts=verts,linewidths=0.5)
+        axis.scatter(xin[i],yin[i],c=[colout(colin[i])],edgecolors="black",
+                     s=areaout[i]*scaleA,alpha=0.6,marker=verts,linewidths=0.5)
 
     axis.set_ylabel(ylabel,size=fontSize1)
     axis.set_xlabel(xlabel,size=fontSize1)
@@ -128,7 +208,7 @@ def Deconfusogram(xin,yin,colin,areain,rotin,
 
     #legAx.yaxis.set_major_formatter(ticker.ScalarFormatter(useMathText=True))
     areaticklab = legy*(max(areain) - min(areain)) + areain[0]
-    legAx.set_yticklabels(["{0:5.3G}".format(ll) for ll in areaticklab])
+    legAx.set_yticklabels(["{0:5.2G}".format(ll) for ll in areaticklab])
 
     numleg = len(legendx)
 
@@ -143,8 +223,8 @@ def Deconfusogram(xin,yin,colin,areain,rotin,
         shift = np.int(phase*len(theta))
         verts[shift,:] = [radius*notchScale* np.cos(2*np.pi*phase),radius*notchScale*np.sin(2*np.pi*phase)]
         scaleA = np.maximum(np.cos(2*np.pi*phase)**2,np.sin(2*np.pi*phase)**2)
-        colAx.scatter(legendx[i],legendy[i],c=colout(legendy[i]),
-                         edgecolors="black",s=areasleg[i]*scaleA,alpha=0.6,verts=verts,linewidths=0.5)
+        colAx.scatter(legendx[i],legendy[i],c=[colout(legendy[i])],
+                         edgecolors="black",s=areasleg[i]*scaleA,alpha=0.6,marker=verts,linewidths=0.5)
 
     if xlims is not None:
         axis.set_xlim(xlims)
