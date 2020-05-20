@@ -6,10 +6,11 @@ import matplotlib.cm as CM
 import matplotlib.colors as COL
 from matplotlib import ticker
 
+import pdb
 
 # 5 continuous variables - x,y, color, area, symbol
 
-areaRange = [100,360]  # sets the dynamic range for the plot symbol areas, increase to make larger symbols
+areaRange = [100,500]  # sets the dynamic range for the plot symbol areas, increase to make larger symbols
 rotRange = [0.,0.5]    # sets the range of phase for the notch rotations, ex. [0.5,1] would give notches below points
 notchScale = 2.0       # sets the length of the notch relative to the radius of the plot circle, 2 is for twice as long, 3 for three times, etc.
 
@@ -32,11 +33,15 @@ def Deconfusogram(xin,yin,colin,areain,rotin,
               ylims=None,
               xlabel="Period (days)",
               ylabel="Mass ($M_{\odot}$)",
-              collabel="Rotation: axisymmetry   /  Color: poloidal",
+              collabel="Color: Poloidal Fraction",
               arealabel="Size: $<B^{2}>$ (kG$^{2}$)",
+              rotlabel = "Fletch Rotation: \n Perc. Axisymmetric",
+              rottextscale= 1.3,
               file=None,
               AbsCol=True,   # set color and symbol rotation on 0-1 range, assumes inputs are in (0,1)
-              AbsRot=True):
+              AbsRot=True,
+              Manual=False,
+              addColorStrip=True):
     """Plotting routine to display ZDI data or more generally 5 variables on single 2-D plot.
         
         Returns a figure and an axis object, with general keywords to adjusting plot contents, all variable arrays should have same length.
@@ -82,6 +87,12 @@ def Deconfusogram(xin,yin,colin,areain,rotin,
         arealabel: string
                 Passed to legAx.set_ylabel ; Used label the right side of the colorbar axis
         
+        rotlabel: string
+                Passed to rotAx.set_title ; Used label the top of the rotation legend
+        
+        rottextscale: float
+                Used to scale spacing of rotation label entries to scatter point in legend
+        
         file: string
               String as name of output file for saving figure.
               
@@ -89,8 +100,13 @@ def Deconfusogram(xin,yin,colin,areain,rotin,
                 Default is True, places colin array to plot on absolute range [0,1] even if max or min do not extend to 0 or 1.
         
         AbsRot: boolean
-        Default is True, places rotin array to plot on absolute range [0,1] even if max or min do not extend to 0 or 1.
+                Default is True, places rotin array to plot on absolute range [0,1] even if max or min do not extend to 0 or 1.
         
+        Manual: boolean
+                Default is False, for disabling default plotting placements
+                
+        addColorStrip: boolean
+                If True, adds color strip to colorbar
         
         Returns
         -------
@@ -126,13 +142,15 @@ def Deconfusogram(xin,yin,colin,areain,rotin,
 
 
     if AbsCol:
-        colout = CM.ScalarMappable(norm=COL.Normalize(vmin=np.minimum(0,min(colin)),
+        col0 = CM.ScalarMappable(norm=COL.Normalize(vmin=np.minimum(0,min(colin)),
                                                   vmax=np.maximum(max(colin),1)),
-                               cmap=plt.get_cmap(cmap)).to_rgba
+                               cmap=plt.get_cmap(cmap))
+        colout = col0.to_rgba
     else:
-        colout = CM.ScalarMappable(norm=COL.Normalize(vmin=min(colin),
+        col0 = CM.ScalarMappable(norm=COL.Normalize(vmin=min(colin),
                                               vmax=max(colin)),
-                           cmap=plt.get_cmap(cmap)).to_rgba
+                           cmap=plt.get_cmap(cmap))
+        colout = col0.to_rgba
     
     areaout = COL.Normalize(vmin=min(areain),vmax=max(areain))(areain).data*(areaRange[1]-areaRange[0]) + areaRange[0]
 
@@ -143,21 +161,25 @@ def Deconfusogram(xin,yin,colin,areain,rotin,
 
     num = len(xin)
 
-    fig.set_figwidth(widthST*1.1)  #make a little wider to accomadate legend axis
-    fig.set_figheight(heightST)
-    axis.tick_params(which='both',labelsize=labelSize1)
+    if not Manual:
+        fig.set_figwidth(widthST*1.1)  #make a little wider to accomadate legend axis
+        fig.set_figheight(heightST)
+        axis.tick_params(which='both',labelsize=labelSize1)
     
-    axis.yaxis.set_minor_locator(ticker.AutoMinorLocator(5))
-    axis.xaxis.set_minor_locator(ticker.AutoMinorLocator(5))
+        axis.yaxis.set_minor_locator(ticker.AutoMinorLocator(5))
+        axis.xaxis.set_minor_locator(ticker.AutoMinorLocator(5))
 
-    for i in range(num):
+    zordindex = np.argsort(areaout)[::-1]
+
+    for l in range(num):
+        i = zordindex[l]
         theta = np.linspace(0,2*np.pi,1000)
         radius = 50   # arbitrary scale for plot symbol
         verts = np.zeros((len(theta),2))
         verts = np.column_stack([radius * np.cos(theta), radius * np.sin(theta)])
 
         phase = rotout[i]
-        shift = np.int(phase*len(theta))
+        shift = np.int(phase*(len(theta)-1))
         # verts here creates the fletched circle symbol
         verts[shift,:] = [radius*notchScale * np.cos(2*np.pi*phase),radius*notchScale*np.sin(2*np.pi*phase)]
 
@@ -169,10 +191,14 @@ def Deconfusogram(xin,yin,colin,areain,rotin,
     axis.set_ylabel(ylabel,size=fontSize1)
     axis.set_xlabel(xlabel,size=fontSize1)
 
-    axis.set_position([0.12,0.15,0.55,0.8])  #defines the locaiton of the main data plot
+    if not Manual:
+        axis.set_position([0.12,0.15,0.55,0.8])  #defines the locaiton of the main data plot
 
-    colAx = fig.add_axes([0.78,0.15,0.1,0.8]) #defines the locaiton of the colorbar
+
+    #colAx = fig.add_axes([0.78,0.15,0.1,0.8],label="Colorbar_{}".format(len(fig.axes))) #defines the location of the colorbar, with arbitrary identifier
+    colAx = fig.add_axes([0.78,0.15,0.1,0.65],label="Colorbar_{}".format(len(fig.axes))) #defines the location of the colorbar, with arbitrary identifier
     legAx = colAx.twinx()
+
 
     #legAx.set_ylim([min(areain),max(areain)])
 
@@ -211,20 +237,65 @@ def Deconfusogram(xin,yin,colin,areain,rotin,
     legAx.set_yticklabels(["{0:5.2G}".format(ll) for ll in areaticklab])
 
     numleg = len(legendx)
+    notch0 = 1 #  size colorbar has no fletches, nm
+    radius0 = radius # set to 50 above
 
-    # populate the colorbar legend
+
+
     for i in range(numleg):
+        theta = np.linspace(0,2*np.pi,1000)
+        #radius = 50   # seems arbitrary?
+        verts = np.zeros((len(theta),2))
+        verts = np.column_stack([radius0 * np.cos(theta), radius0 * np.sin(theta)])
+        
+        phase = np.median(rotleg[i])
+        shift = np.int(phase*len(theta))
+        verts[shift,:] = [radius0*notch0* np.cos(2*np.pi*phase),radius0*notch0*np.sin(2*np.pi*phase)]
+        scaleCB = (notch0 / notchScale)**2 #np.maximum(np.cos(2*np.pi*phase)**2,np.sin(2*np.pi*phase)**2)
+        colAx.scatter(legendx[i],legendy[i],c=[colout(legendy[i])],
+              edgecolors="black",s=areasleg[i]*scaleCB,marker=verts,linewidths=0.5,zorder=100+i)
+
+
+    if addColorStrip:
+        cxs = np.linspace(0,1,100)
+        cXX = np.transpose(np.stack((cxs,cxs)))
+        legAx.contourf(cXX,cmap=cmap,levels=len(cxs),zorder=0,alpha=0.6,extent=[0.91,1.09,0,1])
+        legAx.set_zorder(0)
+        colAx.set_zorder(100)
+        colAx.patch.set_visible(False)
+
+    # for rotation legend
+    rotAx = fig.add_axes([0.78,0.15+0.65,0.1,0.1],label="Rotation_{}".format(len(fig.axes))) #defines the location of the rotation legend
+    rotAx.set_title(rotlabel,fontsize=legendSize1)
+
+    rotAx.set_xticklabels([])
+    rotAx.set_xticks([])
+    rotAx.set_yticklabels([])
+    rotAx.set_yticks([])
+    rotAx.set_xlim([-5,5])
+    rotAx.set_ylim([-5,5])
+
+    rotaxleg = np.array([0,0.5,1])*(rotRange[1]-rotRange[0]) + rotRange[0]
+
+    # populate the rotation legend
+    for i in range(len(rotaxleg)):
         theta = np.linspace(0,2*np.pi,1000)
         radius = 50   # seems arbitrary?
         verts = np.zeros((len(theta),2))
         verts = np.column_stack([radius * np.cos(theta), radius * np.sin(theta)])
 
-        phase = rotleg[i]
-        shift = np.int(phase*len(theta))
+        phase = rotaxleg[i]
+        shift = np.int(phase*(len(theta)-1))
         verts[shift,:] = [radius*notchScale* np.cos(2*np.pi*phase),radius*notchScale*np.sin(2*np.pi*phase)]
         scaleA = np.maximum(np.cos(2*np.pi*phase)**2,np.sin(2*np.pi*phase)**2)
-        colAx.scatter(legendx[i],legendy[i],c=[colout(legendy[i])],
-                         edgecolors="black",s=areasleg[i]*scaleA,alpha=0.6,marker=verts,linewidths=0.5)
+        rotAx.scatter(0,0,c=[colout(0.5)],
+                         edgecolors="black",s=areaRange[0]*scaleA,alpha=0.6,marker=verts,linewidths=0.5)
+
+    rotAx.text(2.75*rottextscale,-0.75*rottextscale,"0",fontsize=legendSize1)
+    rotAx.text(-5*rottextscale,-0.75*rottextscale,"100",fontsize=legendSize1)
+    rotAx.text(-1*rottextscale,3*rottextscale,"50",fontsize=legendSize1)
+
+    rotAx.set_frame_on(False)
 
     if xlims is not None:
         axis.set_xlim(xlims)
@@ -237,7 +308,7 @@ def Deconfusogram(xin,yin,colin,areain,rotin,
     if file is not None:
         fig.savefig(file)
 
-    return fig,axis
+    return fig,axis,colAx, rotAx
 
 
 
