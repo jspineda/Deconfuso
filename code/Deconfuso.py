@@ -6,7 +6,11 @@ import matplotlib.cm as CM
 import matplotlib.colors as COL
 from matplotlib import ticker
 
-import pdb
+#import pdb
+
+
+# If using this code or derivatives thereof, please cite:
+
 
 # 5 continuous variables - x,y, color, area, symbol
 
@@ -115,11 +119,17 @@ def Deconfusogram(xin,yin,colin,areain,rotin,
              
         ax: matplotlib axis object
             axis object pertaining to plot data
-            
+        
+        colA: matplotlib axis object
+            axis object pertaining colorbar/ size bar
+
+        rotA: matplotlib axis object
+            axis object pertaining fletch legend
+        
             
         Notes
         -----
-        Be careful with plotting data for colin and rotin that are not already normalized to range of [0,1], to make sure legend bar accurately reflects the data. Both variables need to be on same range for the color bar axis to make sense -- percentage variables work well here.
+        Be careful with plotting data for colin and rotin that are not already normalized to range of [0,1], to make sure legend bar accurately reflects the data.
         
         Examples
         --------
@@ -129,7 +139,7 @@ def Deconfusogram(xin,yin,colin,areain,rotin,
         >>> import Deconfuso
         
         >>> dat = Table.read("../zdi_data/MasterTable_ZDI.csv")
-        >>> fig, ax = Deconfuso.Deconfusogram(np.log10(dat['Prot(d)']), dat['Mass(Msun)'], dat['Pol.'], 0.1*dat['<B2>(1e5 G2)'],dat['Axisym'],xlabel="$\log_{10}$ Period (d)",file="../plots/Deconfuso_01_Alt.pdf")
+        >>> fig, ax, colA, rotA = Deconfuso.Deconfusogram(np.log10(dat['Prot(d)']), dat['Mass(Msun)'], dat['Pol.'], 0.1*dat['<B2>(1e5 G2)'],dat['Axisym'],xlabel="$\log_{10}$ Period (d)",file="../plots/Deconfuso_01_Alt.pdf")
         
         
         """
