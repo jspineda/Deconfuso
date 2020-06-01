@@ -4,5 +4,6 @@ A compilation of ZDI data and a new plotting routine to visualize typical ZDI re
 
 
 
-https://zenodo.org/badge/151443036.svg
+[![DOI](https://zenodo.org/badge/151443036.svg)](https://zenodo.org/badge/latestdoi/151443036)
+
 
