@@ -6,10 +6,8 @@ import matplotlib.cm as CM
 import matplotlib.colors as COL
 from matplotlib import ticker
 
-#import pdb
 
-
-# If using this code or derivatives thereof, please cite:
+# If using this code or derivatives thereof, please cite: 10.3847/2515-5172/ab98f4 and https://doi.org/10.5281/zenodo.3872225
 
 
 # 5 continuous variables - x,y, color, area, symbol
@@ -17,6 +15,8 @@ from matplotlib import ticker
 areaRange = [100,500]  # sets the dynamic range for the plot symbol areas, increase to make larger symbols
 rotRange = [0.,0.5]    # sets the range of phase for the notch rotations, ex. [0.5,1] would give notches below points
 notchScale = 2.0       # sets the length of the notch relative to the radius of the plot circle, 2 is for twice as long, 3 for three times, etc.
+
+# the above have not been varied extensively in testing and if changes are desired, they should be tested so that they concord with other plotting choices below.
 
 
 # general plotting choices formatting choices
@@ -107,7 +107,7 @@ def Deconfusogram(xin,yin,colin,areain,rotin,
                 Default is True, places rotin array to plot on absolute range [0,1] even if max or min do not extend to 0 or 1.
         
         Manual: boolean
-                Default is False, for disabling default plotting placements
+                Default is False, for disabling default plotting placements, handy for getting output usable for multipanel figures
                 
         addColorStrip: boolean
                 If True, adds color strip to colorbar
